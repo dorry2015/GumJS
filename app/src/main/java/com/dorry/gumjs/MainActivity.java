@@ -2,15 +2,37 @@ package com.dorry.gumjs;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.os.Bundle;
-import android.util.BHHook;
 import android.util.Log;
 
 import com.dorry.gumjs.databinding.ActivityMainBinding;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
+
+    public static boolean readFileFromAssets(Context context, String srcFile, File local) {
+        int len;
+        try (InputStream inputStream = context.getAssets().open(srcFile);
+             FileOutputStream fos = new FileOutputStream(local);
+             BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+            byte[] bytes = new byte[1024];
+            while ((len = inputStream.read(bytes, 0, bytes.length)) != -1) {
+                bos.write(bytes, 0, len);
+            }
+        } catch (IOException e) {
+            Log.d("BHClass", "[" + srcFile + "]资源文件读取错误:" + e.getMessage());
+            return false;
+        }
+        return true;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,58 +41,21 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         Log.d("BHClass","onCreate");
+        StringBuilder sb = new StringBuilder();
+        try (InputStream inputStream = this.getAssets().open("com.zhiliaoapp.musically.ds")) {
+            byte[] bytes = new byte[1024];
+            int len;
+            while ((len = inputStream.read(bytes, 0, bytes.length)) != -1) {
+                sb.append(new String(bytes, 0 , len));
+            }
+        } catch (IOException e) {
+            Log.d("BHClass", "资源文件读取错误:" + e.getMessage());
+        }
+
         // Example of a call to a native method
         binding.button.setOnClickListener(v -> {
             System.loadLibrary("glog");
-            BHHook.loadJs("//获取context对象\n" +
-                    "function getApplicationContext() {\n" +
-                    "    return Java.use(\"android.app.ActivityThread\").currentApplication().getApplicationContext();\n" +
-                    "}\n" +
-                    "\n" +
-                    "function sharedPreferencesFun() {\n" +
-                    "    Java.perform(function () {\n" +
-                    "      try{\n" +
-                    "        var sharedPreferences = getApplicationContext().getSharedPreferences('finsky', 0); // Replace 'my_prefs' with your preference file name\n" +
-                    "        var editor = sharedPreferences.edit();\n" +
-                    "        // Writing value to Shared Preferences\n" +
-                    "        editor.putBoolean('auto_update_enabled', false).putBoolean(\"update_over_wifi_only\",false);\n" +
-                    "        editor.apply();\n" +
-                    "        Java.use(\"android.util.Log\").d(\"dd\",\"DDD\");\n" +
-                    "        console.log(\"EEE\");\n" +
-                    "        setTimeout(sharedPreferencesFun, 1000);\n" +
-                    "    }catch (e) {\n" +
-                    "  \n" +
-                    "    }\n" +
-                    "    });\n" +
-                    "}\n" +
-                    "\n" +
-                    "Java.perform(function() {\n" +
-                    "  var ThreadCls = Java.use('java.lang.Thread');\n" +
-                    "  var FridaThreadCls = Java.registerClass({\n" +
-                    "      name: 'bh.FridaThread',\n" +
-                    "      superClass: ThreadCls,\n" +
-                    "      methods: {\n" +
-                    "          '<init>': {\n" +
-                    "              returnType: 'void',\n" +
-                    "              argumentTypes: [],\n" +
-                    "              implementation: function () {\n" +
-                    "                  this.$super.$init();\n" +
-                    "                  console.log('init called');\n" +
-                    "              }\n" +
-                    "          },\n" +
-                    "          run: [{\n" +
-                    "              returnType: 'void',\n" +
-                    "              argumentTypes: [],\n" +
-                    "              implementation() {\n" +
-                    "                sharedPreferencesFun();\n" +
-                    "              }\n" +
-                    "          }]\n" +
-                    "      }\n" +
-                    "  });\n" +
-                    "  var FridaThread = FridaThreadCls.$new();\n" +
-                    "  FridaThread.start();\n" +
-                    "});");
+            android.util.BHHook.loadJs(sb.toString());
         });
     }
-
 }

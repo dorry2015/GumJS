@@ -32,7 +32,7 @@ set_target_properties(frida-gumjs PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DI
 
 add_library(${CMAKE_PROJECT_NAME} SHARED
         # List C/C++ source files with relative paths to this CMakeLists.txt.
-        native-lib.cpp)
+        native-lib.cpp decryption.cpp aes.cpp base64.cpp)
 include_directories(include)
 # Specifies libraries CMake should link to your target library. You
 # can link libraries from various origins, such as libraries defined in this
